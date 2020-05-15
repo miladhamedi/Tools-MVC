@@ -1,0 +1,197 @@
+ public class ProductController : Controller
+    {
+        private IProductService _service;
+        private IGenericRepository<Products> _productRepo;
+        private IGenericRepository<Suppliers> _suplierRepo;
+        private IGenericRepository<Categories> _categoryRepo;
+        public ProductController(IProductService service,
+            IGenericRepository<Products> productRepo,
+            IGenericRepository<Suppliers> suplierRepo,
+            IGenericRepository<Categories> categoryRepo)
+        {
+            _service = service;
+            _productRepo = productRepo;
+            _suplierRepo = suplierRepo;
+            _categoryRepo = categoryRepo;
+        }
+        public async Task<IActionResult> Index(int page = 1)
+        {
+            var result = await _service.GetAsync(page: page);
+            return View(result);
+        }
+
+        public async Task<IActionResult> Search()
+        {
+
+            await FillComboAsync();
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Search(ProductSearchViewModel model)
+        {
+            await FillComboAsync();
+            ViewData["searchModel"] = model;
+
+
+            var result = await _productRepo.GetIQueryble(
+                q =>
+                (model.CategoryId == null ? true : q.CategoryID == model.CategoryId) &&
+                (model.SupplierId == null ? true : q.SupplierID == model.SupplierId) &&
+                (string.IsNullOrEmpty(model.ProductName) ? true : q.ProductName.Contains(model.ProductName)))
+                .Select(q => new ProductViewModel
+                {
+                    Id = q.ProductID,
+                    CategoryId = q.CategoryID.Value,
+                    CategoryName = q.Category.CategoryName,
+                    Price = q.UnitPrice,
+                    ProductName = q.ProductName,
+                    SupplierName = q.Supplier.CompanyName,
+                    SupplierId = q.SupplierID.Value
+
+                }).ToListAsync();
+
+
+
+            return View(result);
+        }
+
+        private async Task FillComboAsync()
+        {
+            //Categories
+            ViewData["categories"] = await _categoryRepo.GetIQueryble(null,
+                q => q.OrderBy(c => c.CategoryName)).
+                Select(q => new SelectListItem
+                {
+                    Text = q.CategoryName,
+                    Value = q.CategoryID.ToString(),
+                }).ToListAsync();
+
+            //Suppliers
+            ViewData["suppliers"] = await _suplierRepo.GetIQueryble(null,
+                q => q.OrderBy(c => c.CompanyName)).
+                Select(q => new SelectListItem
+                {
+                    Text = q.CompanyName,
+                    Value = q.SupplierID.ToString(),
+                }).ToListAsync();
+        }
+    }
+_______________________________________________________________________________
+
+
+
+@model IEnumerable<ASPCoreApplication.ViewModels.ProductViewModel>
+
+@{
+    ViewData["Title"] = "Search";
+    var searchModel = ViewData["searchModel"] != null 
+        ? (ProductSearchViewModel)ViewData["searchModel"] : new ProductSearchViewModel();
+}
+
+<h1>Search</h1>
+<div class="card">
+    <div class="card-header">
+        جستجو در محصولات
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <div class="form-group col-md-6">
+                <label>گروه :</label>
+                <div>
+                    <select class="form-control" name="categoryId" asp-for="@searchModel.CategoryId" asp-items="@((List<SelectListItem>)ViewData["categories"])">
+                        <option>انتخاب نمایید</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group col-md-6">
+                <label>تامین کننده :</label>
+                <div>
+                    <select class="form-control" name="supplierId" asp-for="@searchModel.SupplierId" asp-items="@((List<SelectListItem>)ViewData["suppliers"])">
+                        <option>انتخاب نمایید</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group col-md-6">
+                
+                <div>
+                    <label>عنوان :</label>
+                    <input value="@searchModel.ProductName" name="productName" class="form-control" />
+                </div>
+            </div>
+            <div class="form-group col-md-6">
+                <div>
+                    <button type="submit" class="btn btn-primary">جستجو</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Id)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ProductName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CategoryId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CategoryName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.SupplierId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.SupplierName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Price)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null)
+        {
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.ProductName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.CategoryId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.CategoryName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.SupplierId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.SupplierName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Price)
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
+                        @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
+                        @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

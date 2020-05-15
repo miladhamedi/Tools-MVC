@@ -1,0 +1,117 @@
+{
+    public class AccountController : Controller
+    {
+        private FadContext _context;
+
+        public AccountController(FadContext context)
+        {
+            _context = context;
+        }
+        public IActionResult Login()
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = _context.Users.SingleOrDefault(q => q.UserName == model.UserName);
+                if(user == null)
+                {
+                    ModelState.AddModelError("","invalid username & password");
+                    return View(model);
+                }
+             
+                var hashPassword = EncyrptionUtility.HashSHA256($"{model.Password} {user.PasswordSalt}");
+                if(user.Password != hashPassword)
+                {
+                    ModelState.AddModelError("", "invalid username & password");
+                    return View(model);
+                }
+
+                var claims = new List<Claim>
+                {
+                        new Claim(ClaimTypes.Name, user.UserName),
+                        new Claim("FullName", user.UserName),
+                        //new Claim(ClaimTypes.Role, "Administrator"),
+                };
+
+                var claimsIdentity = new ClaimsIdentity(
+                    claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                var authProperties = new AuthenticationProperties
+                {
+                    //AllowRefresh = <bool>,
+                    // Refreshing the authentication session should be allowed.
+
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(10),
+                    // The time at which the authentication ticket expires. A 
+                    // value set here overrides the ExpireTimeSpan option of 
+                    // CookieAuthenticationOptions set with AddCookie.
+
+                    //IsPersistent = true,
+                    // Whether the authentication session is persisted across 
+                    // multiple requests. When used with cookies, controls
+                    // whether the cookie's lifetime is absolute (matching the
+                    // lifetime of the authentication ticket) or session-based.
+
+                    //IssuedUtc = <DateTimeOffset>,
+                    // The time at which the authentication ticket was issued.
+
+                    //RedirectUri = <string>
+                    // The full path or absolute URI to be used as an http 
+                    // redirect response value.
+                };
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+            }
+            return RedirectToAction("Index", "Home");
+        }
+   
+
+        public IActionResult Register()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+           
+            if (ModelState.IsValid)
+            {
+
+                //check password with confirmpassword
+                //check user name already!!!!!
+                var saltPassword = Guid.NewGuid().ToString();
+                var hashPassword = EncyrptionUtility.HashSHA256($"{model.Password} {saltPassword}"); //EncyrptionUtility.HashSHA256($"{saltPassword}{model.Password}");
+
+                var user = new Users
+                {
+                    CreateDate = DateTime.Now,
+                    Id = Guid.NewGuid(),
+                    IsActive = true,
+                    UserName = model.UserName,
+                    PasswordSalt = saltPassword,
+                    Password = hashPassword
+                };
+                await _context.AddAsync(user);
+                await _context.SaveChangesAsync();
+
+                return RedirectToAction("Login");
+            }
+            return View(model);
+        }
+
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(
+                 CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login");
+        }
+    }
+}

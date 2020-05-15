@@ -1,0 +1,17 @@
+  [Display(Name = nameof(Annotation.ProductId), ResourceType = typeof(Annotation))]
+        [Required(ErrorMessage ="فیلد کد محصول اجباری است")]
+        public int ProductId { get; set; }
+        [Display(Name = nameof(Annotation.ProductName), ResourceType = typeof(Annotation))]
+        [Required(ErrorMessage ="نام محصول اجباری است")]
+        [StringLength(10, MinimumLength = 3, 
+            ErrorMessageResourceName = nameof(Message.StringLength), 
+            ErrorMessageResourceType = typeof(Message))]
+        public string ProductName { get; set; }
+        //[DisplayName("کد گروه")]
+        [Display(Name = nameof(Annotation.CategoryId), ResourceType = typeof(Annotation))]
+        public int CategoryId { get; set; }
+        //[DisplayName("قیمت")]
+        [Display(Name = nameof(Annotation.Price), ResourceType = typeof(Annotation))]
+
+        [Range(1000, 5000)]
+        public int Price { get; set; }

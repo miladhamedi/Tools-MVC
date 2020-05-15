@@ -1,0 +1,11 @@
+﻿
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Upload File : </h1>
+<form method="post" action="/Product/UploadFile" enctype="multipart/form-data">
+    Choose File : <input type="file" name="thumbnail" accept="image/*" />
+    <button type="submit">Send File to Server</button>
+</form>
+

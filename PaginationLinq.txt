@@ -1,0 +1,52 @@
+  public async Task<FadActionResult<List<ProductViewModel>>> GetAllAsync(
+            Expression<Func<Products, bool>> predicate = null,
+            int page = 1, int pageSize = 5)
+        {
+            var result = new FadActionResult<List<ProductViewModel>>();
+            int totalItemCount = 0;
+            if (predicate != null)
+            {
+                result.Data = await _dbContext.Products.Where(predicate)
+                    .OrderBy(q => q.ProductID)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(
+                    q => new ProductViewModel
+                    {
+                        CategoryId = q.CategoryID.Value,
+                        ProductName = q.ProductName,
+                        Id = q.ProductID,
+                        CategoryName = q.Category.CategoryName,
+                        SupplierId = q.SupplierID.Value,
+                        SupplierName = q.Supplier.CompanyName,
+                        Price = q.UnitPrice
+                    }).ToListAsync();
+
+                totalItemCount = await _dbContext.Products.Where(predicate).CountAsync();
+            }
+            else
+            {
+                result.Data = await _dbContext.Products
+                    .OrderBy(q => q.ProductID)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(
+                   q => new ProductViewModel
+                   {
+                       CategoryId = q.CategoryID.Value,
+                       ProductName = q.ProductName,
+                       Id = q.ProductID,
+                       CategoryName = q.Category.CategoryName,
+                       SupplierId = q.SupplierID.Value,
+                       SupplierName = q.Supplier.CompanyName,
+                       Price = q.UnitPrice
+                   }).ToListAsync();
+
+                totalItemCount = await _dbContext.Products.CountAsync();
+            };
+
+            result.IsSuccess = true;
+            result.Pages = Convert.ToInt32(Math.Ceiling((decimal)totalItemCount / pageSize));
+            result.Page = page;
+            return result;
+        }

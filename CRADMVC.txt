@@ -1,0 +1,95 @@
+ public class CategoryController : Controller
+    {
+        private NorthwindContext _dbContext;
+        public CategoryController(NorthwindContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var result = await _dbContext.Categories.Select(q => new CategoryViewModel
+            {
+                CategoryId = q.CategoryID,
+                CategoryName = q.CategoryName,
+                Description = q.Description
+            }).ToListAsync();
+
+            return View(result);
+        }
+
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(CategoryViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            //step 2
+            var category = new Categories
+            {
+                CategoryName = model.CategoryName,
+                Description = model.Description
+            };
+
+            //step 3
+            //await _dbContext.Categories.AddAsync(category);
+            await _dbContext.AddAsync(category);
+
+            //step 4
+            await _dbContext.SaveChangesAsync();
+
+            return RedirectToAction("index");
+        }
+
+        public async Task<IActionResult> Delete(int id)
+        {
+            //2
+            var item = await _dbContext.Categories.FindAsync(id);
+
+            //3
+            _dbContext.Remove(item);
+
+            //4
+            await _dbContext.SaveChangesAsync();
+
+            return RedirectToAction("index");
+        }
+
+        public async Task<IActionResult> Edit(int id)
+        {
+            //get item from db
+            var item = await _dbContext.Categories.FindAsync(id);
+
+            //convert to view model
+            var model = new CategoryViewModel
+            {
+                CategoryId = item.CategoryID,
+                CategoryName = item.CategoryName,
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(CategoryViewModel model)
+        {
+            //get item from db
+            var item = await _dbContext.Categories.FindAsync(model.CategoryId);
+
+            //update item from model
+            item.CategoryName = model.CategoryName;
+            item.Description = model.Description;
+
+            //saveChanges
+            await _dbContext.SaveChangesAsync();
+
+            return RedirectToAction("index");
+        }
+    }

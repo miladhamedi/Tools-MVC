@@ -1,0 +1,1 @@
+Scaffold-DbContext -UseDatabaseNames "Data Source=.;Initial Catalog=AuthDBSample;Persist Security Info=True;User ID=sa;Password=123" -force  Microsoft.EntityFrameworkCore.SqlServer -OutputDir Entities -Context "FadContext" -DataAnnotations

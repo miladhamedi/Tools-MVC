@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ManualAuthenticationSample</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <style>
+        #chatBox{
+            position:absolute;
+            bottom:0;
+            right:0;
+            width:200px;
+            height:250px;
+            background-color:#ffd800;
+        }
+
+
+    </style>
+</head>
+<body>
+    <mini-profiler />
+
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ManualAuthenticationSample</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Profile" asp-action="Index">@User.Identity.Name</a>
+
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Logout">Logout</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register">Register</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Login</a>
+                            </li>
+
+                        }
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2019 - ManualAuthenticationSample - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <div id="chatBox">
+        <button onclick="startChat(this)">Start Chart !</button>
+        Name :  <input type="text" id="sender" />
+        <br />
+        Message :  <input type="text" id="message" />
+        <input type="button" disabled id="sendmessage" value="Send" />
+        <ul id="discussion"></ul>
+        <hr />
+        Specific User : <input id="specificUser" />
+        <br />
+        Message :  <input type="text" id="specificMessage" />
+        <button id="btnSpecificMessage">Send for specificUser</button>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="/signalr/signalr.min.js"></script>
+    <script type="text/javascript">
+        var name = '';
+        function startChat(element) {
+            $(element).hide();
+            name = $("#sender").val();
+            $("#sendmessage").removeAttr("disabled");
+        }
+
+   
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            var messageInput = document.getElementById('message');
+
+            // Get the user name and store it to prepend to messages.
+          
+            // Set initial focus to message input box.
+            messageInput.focus();
+
+            // Start the connection.
+            var connection = new signalR.HubConnectionBuilder()
+                .withUrl('/chat')
+                .build();
+
+            // Create a function that the hub can call to broadcast messages.
+            connection.on('broadcastMessage', function (name, message) {
+                // Html encode display name and message.
+                var encodedName = name;
+                var encodedMsg = message;
+                // Add the message to the page.
+                var liElement = document.createElement('li');
+                liElement.innerHTML = '<strong>' + encodedName + '</strong>:&nbsp;&nbsp;' + encodedMsg;
+                document.getElementById('discussion').appendChild(liElement);
+            });
+
+            connection.on('specificMessage', function (sender, message) {
+                alert(`Send Message from : ${sender} ----Message:${message}`);
+            });
+
+            connection.on('adminMessage', function (message) {
+                alert("admin Message : " + message);
+            });
+
+            // Transport fallback functionality is now built into start.
+            connection.start()
+                .then(function () {
+                    console.log('connection started');
+                    document.getElementById('sendmessage').addEventListener('click', function (event) {
+                        // Call the Send method on the hub.
+                        connection.invoke('send', name, messageInput.value);
+
+                        // Clear text box and reset focus for next comment.
+                        messageInput.value = '';
+                        messageInput.focus();
+                        event.preventDefault();
+                    });
+
+                     document.getElementById('btnSpecificMessage').addEventListener('click', function (event) {
+
+                            var message = $("#specificMessage").val();
+                         var revicer = $("#specificUser").val();
+
+                         // Call the Send method on the hub.
+                        connection.invoke('sendForUser', name, revicer, message);
+
+                        // Clear text box and reset focus for next comment.
+                        event.preventDefault();
+                    });
+
+                    
+
+                   
+                })
+                .catch(error => {
+                    console.error(error.message);
+                });
+        });
+    </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

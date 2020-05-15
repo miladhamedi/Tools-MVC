@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>WebAPI</name>
+    </assembly>
+    <members>
+        <member name="M:WebAPI.Controllers.AccountController.Login(System.String,System.String)">
+            <summary>
+            سرویس لاگین با نام کاربری و رمز عبور و دریافت توکن
+            </summary>
+            <param name="userName"></param>
+            <param name="password"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

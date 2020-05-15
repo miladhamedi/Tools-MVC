@@ -1,0 +1,28 @@
+FirstStep:Register in startup
+
+Syntax
+private FadContext _context;
+        private IMemoryCache _cache;
+
+        public AccountController(FadContext context, IMemoryCache cache)
+        {
+            _context = context;
+            _cache = cache;
+        }
+
+  var userList = new List<Users>();
+
+            if(!_cache.TryGetValue<List<Users>>(_userListCacheKey, out userList))
+            {
+                userList = await _context.Users.ToListAsync();
+
+
+                //add to cache
+                _cache.Set(_userListCacheKey, userList);
+            }
+
+
+
+
+Remove    _cache.Remove(_userListCacheKey);
+Requst in Data Cach

@@ -1,0 +1,52 @@
+ public class ProductController : Controller
+    {
+        IWebHostEnvironment _env;
+        public ProductController(IWebHostEnvironment env)
+        {
+            _env = env;
+        }
+
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UploadFile(IFormFile thumbnail)
+        {
+            var f = thumbnail;
+
+            var newFileName = DateTime.Now.Ticks;
+            var tempArray = thumbnail.FileName.Split('.');
+            var fileExtension =tempArray[tempArray.Length - 1];
+
+            var fileName = $"{newFileName}.{fileExtension}";
+            var basePath = $"{_env.WebRootPath}\\Medias\\Products\\";
+            var filePath = $"{basePath}/{fileName}";
+
+            if (!Directory.Exists(basePath))
+                Directory.CreateDirectory(basePath);
+
+            //save in file
+            using (var stream = System.IO.File.Create(filePath))
+            {
+                await thumbnail.CopyToAsync(stream);
+            }
+
+            return View("Index");
+        }
+    }
+
+
+
+_________________________________________________________________________________________________
+
+
+in view UpLoad File ASp .net Core 
+
+<h1>Upload File : </h1>
+<form method="post" action="/Product/UploadFile" enctype="multipart/form-data">
+    Choose File : <input type="file" name="thumbnail" accept="image/*" />
+    <button type="submit">Send File to Server</button>
+</form>
+

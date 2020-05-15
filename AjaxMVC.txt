@@ -1,0 +1,183 @@
+@model IEnumerable<ManualAuthenticationSample.Entities.Permissions>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.ControllerName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ControllerCaption)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ActionName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ActionCaption)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ActionType)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            string encryptID = EncyrptionUtility.Encrypt(item.Id.ToString());
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ControllerName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ControllerCaption)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ActionName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ActionCaption)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ActionType)
+                </td>
+                <td>
+                    <a onclick="showEditModal(event, this, '@item.Id')" class="btn btn-info btn-sm">Edit</a> |
+                    <a class="btn btn-danger btn-sm" href="/Admin/Permission/Delete/@encryptID">Delete</a>
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="modal fade" id="sampleModal" tabindex="-1" role="dialog" aria-labelledby="channelModal">
+    <div class="modal-dialog" style="width:80%;max-width:1000px !important" role="document">
+        <div class="modal-content">
+            <div class="modal-title" style="padding:15px 15px 0">
+                <h3 class="text-left">
+                  ویرایش | افزودن دسترسی
+                    <button type="button" class="close pull-right" data-dismiss="modal" aria-label="Close"><strong style='font-size:35px;' aria-hidden="true">&times;</strong></button>
+                </h3>
+            </div>
+            <div class="modal-body">
+               
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        const showEditModal = (event,id) => {
+            //debugger;
+            event.preventDefault();
+
+            //ajax: 1.jQuery Ajax 2.Fetch 3.XMLHttpRequest
+
+            const url = `/Admin/Permission/Edit/${id}`;
+            $.get(url, function (html) {  
+                $('#sampleModal .modal-body').html(html);
+                 $("#sampleModal").modal();
+            })
+        }
+    </script>
+}
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Post Form
+@model ManualAuthenticationSample.Entities.Permissions
+
+@{
+    ViewData["Title"] = "Edit";
+    Layout = null;
+}
+
+<h1>Edit</h1>
+
+<h4>Permissions</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form id="editForm" action="/Admin/Permission/Edit" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <div class="form-group">
+                <label asp-for="AreaName" class="control-label"></label>
+                <input asp-for="AreaName" class="form-control" />
+                <span asp-validation-for="AreaName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="AreaCaption" class="control-label"></label>
+                <input asp-for="AreaCaption" class="form-control" />
+                <span asp-validation-for="AreaCaption" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ControllerName" class="control-label"></label>
+                <input asp-for="ControllerName" class="form-control" />
+                <span asp-validation-for="ControllerName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ControllerCaption" class="control-label"></label>
+                <input asp-for="ControllerCaption" class="form-control" />
+                <span asp-validation-for="ControllerCaption" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ActionName" class="control-label"></label>
+                <input asp-for="ActionName" class="form-control" />
+                <span asp-validation-for="ActionName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ActionCaption" class="control-label"></label>
+                <input asp-for="ActionCaption" class="form-control" />
+                <span asp-validation-for="ActionCaption" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ActionType" class="control-label"></label>
+                <input asp-for="ActionType" class="form-control" />
+                <span asp-validation-for="ActionType" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit"value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+<script>
+    //const saveData = (event, this) => {
+    //    event.preventDefault();
+    //    alert();
+    //}
+
+
+    $('#editForm').submit(function (event) {
+        event.preventDefault();
+        var data = $(this).serialize();
+
+        const url = `${this.action}/@Model.Id`;
+
+        $.post(url, data, function (result) {
+            
+            if (result.isSuccess) {
+                
+                alert(result.message);
+                $('#sampleModal').modal('hide');
+
+            }
+        })
+    })
+</script>

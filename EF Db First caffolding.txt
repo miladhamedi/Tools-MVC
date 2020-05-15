@@ -1,0 +1,8 @@
+Scaffold-DbContext -UseDatabaseNames "Data Source=.;Initial Catalog=SampleDB;Persist Security Info=True;User ID=sa;Password=123"  Microsoft.EntityFrameworkCore.SqlServer -OutputDir Entities -Context "CobelContext" -DataAnnotations -Force
+
+
+register dbContext in Startup ConfigureServices
+services.AddDbContext<CobelContext>(options => options.UseSqlServer(Configuration.GetConnectionString("myDB")));
+
+
+https://docs.microsoft.com/en-us/ef/core/miscellaneous/cli/powershell

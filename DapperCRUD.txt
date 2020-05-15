@@ -1,0 +1,121 @@
+{
+    public class CategoryRepository : ICategoryRepository
+    {
+        private IConfiguration Configuration;
+        public CategoryRepository(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+       
+        public async Task<(List<Category>, List<Supplier>)> GetMultiSelectAsync()
+        {
+            var connectionString = Configuration.GetConnectionString("FadConnection");
+            using (IDbConnection dapper = new SqlConnection(connectionString))
+            {
+                string commandText = "SP_MultiSelect_Category_Supplier";
+                var result = await dapper.QueryMultipleAsync(commandText, commandType: CommandType.StoredProcedure);
+                var categories = await result.ReadAsync<Category>();
+                var suppliers = await result.ReadAsync<Supplier>();
+
+                return (categories.ToList(), suppliers.ToList());
+            }
+        }
+
+        public async Task<List<Category>> GetAllAsync()
+        {
+            var connectionString = Configuration.GetConnectionString("FadConnection");
+            using (IDbConnection dapper = new SqlConnection(connectionString))
+            {
+                string commandText = "select Id, Title as CategoryName, Body from MyCategories";
+                var result = await dapper.QueryAsync<Category>(commandText);
+                return result.ToList();
+            }
+        }
+        public async Task<Category> GetByIdAsync(int id)
+        {
+            var connectionString = Configuration.GetConnectionString("FadConnection");
+            using (IDbConnection dapper = new SqlConnection(connectionString))
+            {
+                string commandText = "select * from MyCategories Where id=@id";
+                var result = await dapper.QuerySingleOrDefaultAsync<Category>(commandText, new { id });
+                return result;
+            }
+        }
+
+        public async Task MultiInsertAsync(List<Category> categories)
+        {
+            var table = new DataTable();
+            table.Columns.Add("id", typeof(int));
+            table.Columns.Add("title", typeof(string));
+            table.Columns.Add("body", typeof(string));
+
+            foreach (var item in categories)
+            {
+                var dtRow = table.NewRow();
+                dtRow["id"] = 0;
+                dtRow["title"] = item.CategoryName;
+                dtRow["body"] = item.Body;
+                table.Rows.Add(dtRow);
+            }
+
+            var connectionString = Configuration.GetConnectionString("FadConnection");
+            using (IDbConnection dapper = new SqlConnection(connectionString))
+            {
+                var command = "SP_Category_MultiInsert";
+                var parameters = new DynamicParameters();
+               
+
+                await dapper.ExecuteAsync(
+                    command,
+                    new { rows = table.AsTableValuedParameter("dbo.MyCategoryType") },
+                    commandType: CommandType.StoredProcedure);
+            }
+
+        }
+
+
+        public async Task InsertAsync(Category model)
+        {
+            var connectionString = Configuration.GetConnectionString("FadConnection");
+            using (IDbConnection dapper = new SqlConnection(connectionString))
+            {
+                var command = "SP_Category_Insert";
+                var parameters = new DynamicParameters();
+                parameters.Add("title", model.CategoryName);
+                parameters.Add("body", model.Body);
+                parameters.Add("id", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+
+                await dapper.ExecuteAsync(
+                    command,
+                    parameters,
+                    commandType: CommandType.StoredProcedure);
+
+                var newId = parameters.Get<int>("id");
+            }
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            using (IDbConnection dapper = ConnectionFactory.GetConnection())
+            {
+                var command = "SP_Category_Delete";
+                await dapper.ExecuteAsync(command, new { id }, commandType: CommandType.StoredProcedure);
+            }
+        }
+
+        public async Task UpdateAsync(Category model)
+        {
+            var connectionString = Configuration.GetConnectionString("FadConnection");
+            using (IDbConnection dapper = new SqlConnection(connectionString))
+            {
+                var command = "SP_Category_Update";
+                await dapper.ExecuteAsync(
+                    command,
+                    new { id = model.Id, title = model.CategoryName, body = model.Body },
+                    commandType: CommandType.StoredProcedure);
+            }
+        }
+    }
+}
